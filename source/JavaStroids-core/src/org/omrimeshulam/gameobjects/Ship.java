@@ -12,7 +12,6 @@ public class Ship extends GameObject implements Updatable{
 	private Vector2 targetDirection;
 	private Vector2 velocity;
 	private final float MIN_VELOCITY = 20;
-	Boolean mock = false;
 	
 	public Ship(Texture texture, int x, int y) {
 		sprite = new Sprite(texture);

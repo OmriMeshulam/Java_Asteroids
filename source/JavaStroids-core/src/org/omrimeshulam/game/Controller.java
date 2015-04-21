@@ -26,7 +26,7 @@ public class Controller {
 	ArrayList<GameObject> drawableObjects; 
 	Vector <Integer> removeList;
 	Ship ship;
-	private float screenHeight;
+	public float screenHeight;
 	private float missileWait;
 	private Sound thrustersSound;
 	private Music backgroundNoise;
@@ -39,20 +39,34 @@ public class Controller {
 	private float explosionY;
 	private float asteroidExplosionX;
 	private float asteroidExplosionY;
+	private int numAstroids;
+	private float astrVel;
+	private int numLives;
+	private Boolean hasAstroid, astroidPresent, shipCrashing;
+	private int score, astroidTrack;
+	private int level;
 	
 	public Controller(){
+		level = 1;
+		numAstroids = level * 3;
+		astrVel = level ;
 		drawableObjects = new ArrayList<GameObject>(); 
 		initShip();
-		initAsteroids(10);
+		initAsteroids(numAstroids);
 		initSound();
 		screenHeight = Gdx.graphics.getHeight();
 		soundCheck = true;
 		shipCrashed = false;
 		asteroidCrash = false;
 		removeList = new Vector<Integer>();
+		hasAstroid = true;
+		astroidPresent = true;
+		shipCrashing = false;
+		numLives = 3;
+		score = 0;		
 	}
 	
-	private void initShip(){
+	public void initShip(){
 		int w = Constants.SHIP_WIDTH; 
 		int h = Constants.SHIP_HEIGHT; 
 		missileWait = 0;
@@ -67,13 +81,19 @@ public class Controller {
 	
 	private void initAsteroids(int num){
 		Random rand = new Random();
+		int temp1, temp2;
 		for(int i = 0; i<num; i++){
-			Asteroid asteroid = new Asteroid(new Texture("Asteroid_tex.png"));
-			asteroid.sprite.setPosition(rand.nextInt(Gdx.graphics.getWidth()), rand.nextInt(Gdx.graphics.getHeight()));
+			Asteroid asteroid = new Asteroid(new Texture("sprites/Asteroid_tex.png"));
+			do{
+			temp1 = rand.nextInt(Gdx.graphics.getWidth());
+			temp2 = rand.nextInt(Gdx.graphics.getHeight());
+			}while((temp1 < 200) && (temp2 < 200) ); // giving space for the ship
+			asteroid.sprite.setPosition(temp1, temp2);
 			asteroid.sprite.setOrigin(asteroid.sprite.getWidth() / 2, asteroid.sprite.getHeight() / 2);
 			asteroid.setRotVel(rand.nextFloat()*8-4);
 			drawableObjects.add(asteroid);
 		}
+		astroidTrack = num;
 	}
 	
 	private void initMissile(){
@@ -88,16 +108,16 @@ public class Controller {
 	private void initSound(){
 		thrustersSound = Gdx.audio.newSound(
 				Gdx.files.internal(
-						"125810__robinhood76__02578-rocket-start.wav"));
+						"sound/125810__robinhood76__02578-rocket-start.wav"));
 		missileSound = Gdx.audio.newSound(
 				Gdx.files.internal(
-						"missile.wav"));
+						"sound/missile.wav"));
 		backgroundNoise = Gdx.audio.newMusic(
 				Gdx.files.internal(
-						"132150__soundsodd__interior-spaceship.mp3"));
+						"sound/132150__soundsodd__interior-spaceship.mp3"));
 		explosionSound = Gdx.audio.newSound(
 				Gdx.files.internal(
-						"100773__cgeffex__impact-explosion.wav"));
+						"sound/100773__cgeffex__impact-explosion.wav"));
 		
 		backgroundNoise.setLooping(true);
 		backgroundNoise.play();
@@ -108,12 +128,13 @@ public class Controller {
 		processKeyboardInput();
 		processMouseInput();
 		float deltaT = Gdx.graphics.getDeltaTime();
-		
+		astroidPresent= false;
 		for(int i = 0; i < drawableObjects.size(); i++){
 			GameObject gObj = drawableObjects.get(i);
 			// updating asteroids
 			if(gObj instanceof Asteroid){
-				((Asteroid) gObj).update(deltaT);
+				astroidPresent = true;
+				((Asteroid) gObj).update(deltaT * astrVel);
 				if(ship.sprite.getBoundingRectangle().overlaps(((Asteroid) gObj).sprite.getBoundingRectangle()) && !shipCrashed){
 					shipCrashed = true;
 					explosionSound.play();
@@ -130,7 +151,8 @@ public class Controller {
 							removeList.addElement(i);
 							asteroidExplosionX = gObj.sprite.getX();
 							asteroidExplosionY = gObj.sprite.getY();
-
+							score += 100;
+							astroidTrack--;
 						}
 					}
 				}
@@ -139,14 +161,23 @@ public class Controller {
 			if(gObj instanceof Missile){
 				((Missile) gObj).update(deltaT);
 			}
-		}	
+		}
+		
+		if (astroidPresent){ hasAstroid = true; }
+		else{ hasAstroid = false; }
 		// Update ship
-		missileWait += deltaT;
+		missileWait += deltaT * astrVel;
 		
 		if(!shipCrashed){
-			ship.update(deltaT);
+			ship.update(deltaT * astrVel);
 		}else{
+			shipCrashing = true;
 			drawableObjects.remove(ship);
+			lifeLost();
+			if(numLives > 0){
+				initShip();
+				shipCrashed = false;
+			}
 		}
 		Collections.sort(removeList);
 		for(int i = removeList.size()-1; i>=0; i--){ // going backwards because once element is removed all object indexes to right decrease by 1.
@@ -169,7 +200,7 @@ public class Controller {
 				if(Gdx.input.isKeyPressed(Keys.UP)){
 					if(Gdx.input.isKeyJustPressed(Keys.UP)){
 						soundCheck=true;
-					}
+					} 
 				}
 			}
 		}
@@ -188,6 +219,20 @@ public class Controller {
 		if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
 			ship.face(new Vector2(Gdx.input.getX()-ship.sprite.getX(),
 					-(screenHeight - Gdx.input.getY()-ship.sprite.getY())));
+		}
+		if (Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
+			ship.moveForward(Gdx.graphics.getDeltaTime());
+			if(soundCheck){
+				thrustersSound.play(0.5f);
+				soundCheck=false;
+			}
+			else{
+				if(Gdx.input.isKeyPressed(Keys.UP)){
+					if(Gdx.input.isKeyJustPressed(Keys.UP)){
+						soundCheck=true;
+					}
+				}
+			}
 		}
 		
 	}
@@ -225,4 +270,57 @@ public class Controller {
 	public float getAsteroidExplosionY(){
 		return asteroidExplosionY;
 	}
+	public Boolean checkAstroid(){
+		return hasAstroid;
+	}
+	public int checkLives(){
+		return numLives;
+	}
+	public void lifeLost(){
+		numLives--;
+	}
+	public void refresh(){
+		level = currLevel();
+		numAstroids = level * 3;
+		astrVel = level;
+		drawableObjects = new ArrayList<GameObject>(); 
+		initShip();
+		initAsteroids(numAstroids);
+		initSound();
+		screenHeight = Gdx.graphics.getHeight();
+		soundCheck = true;
+		shipCrashed = false;
+		asteroidCrash = false;
+		removeList = new Vector<Integer>();
+		hasAstroid = true;
+		astroidPresent = true;
+		shipCrashing = false;
+		numLives = 3;
+	}
+	
+	public int currLevel(){
+		return level;
+	}
+	public void levelUp(){
+		level++;
+	}
+	public void levelStart(){
+		level = 1;
+	}
+	public void scoreClear(){
+		score = 0;
+	}
+	public int getScore(){
+		return score;
+	}
+	public int getAstroidNum(){
+		return astroidTrack;
+	}
+	public Boolean isShipCrashing(){
+		return shipCrashing;
+	}
+	public void setShipCrashingFalse(){
+		shipCrashing = false;
+	}
+
 }
