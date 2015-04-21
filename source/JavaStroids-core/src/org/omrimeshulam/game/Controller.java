@@ -87,10 +87,10 @@ public class Controller {
 			do{
 			temp1 = rand.nextInt(Gdx.graphics.getWidth());
 			temp2 = rand.nextInt(Gdx.graphics.getHeight());
-			}while((temp1 < 200) && (temp2 < 200) ); // giving space for the ship
+			}while(((temp1 < 200) && (temp2 < 200)) || ((temp1 > screenHeight+200) && (temp2 > screenHeight+200))); // giving space for the ship
 			asteroid.sprite.setPosition(temp1, temp2);
 			asteroid.sprite.setOrigin(asteroid.sprite.getWidth() / 2, asteroid.sprite.getHeight() / 2);
-			asteroid.setRotVel(rand.nextFloat()*8-4);
+			asteroid.setRotVel(rand.nextFloat()*5);
 			drawableObjects.add(asteroid);
 		}
 		astroidTrack = num;

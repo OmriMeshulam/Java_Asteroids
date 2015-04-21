@@ -31,10 +31,10 @@ public class Asteroid extends GameObject implements Updatable{
 	public void update(float deltaTime) {
 		sprite.rotate(getRotVel());
 		this.sprite.translate(this.dirAndVel.x * deltaTime, this.dirAndVel.y * deltaTime);
-		if ((this.sprite.getX() < 0.0F) || (this.sprite.getX() > this.screenWidth)) { // if the asteroid coordinates meet the bounds of the screen
+		if ((this.sprite.getX() < 0.0F) || (this.sprite.getX() > this.screenWidth-sprite.getWidth())) { // if the asteroid coordinates meet the bounds of the screen
 			this.dirAndVel.x = (-this.dirAndVel.x); // flip the directionAndVelocity accordingly.
 		}
-		if ((this.sprite.getY() < 0.0F) || (this.sprite.getY() > this.screenHeight)) {
+		if ((this.sprite.getY() < 0.0F) || (this.sprite.getY() > this.screenHeight-sprite.getHeight())) {
 			this.dirAndVel.y = (-this.dirAndVel.y);
 		}
 	}
